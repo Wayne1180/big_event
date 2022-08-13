@@ -55,3 +55,43 @@ export const getMenusListAPI = () => {
         url: '/my/menus',
     })
 }
+
+// 更新用户基本资料
+export const updateUserInfoAPI = ({ obj }) => {
+    return request({
+        url: '/my/userinfo',
+        method: 'PUT',
+        data: {
+            id,
+            username,
+            nickname,
+            email,
+            user_pic
+        }
+    })
+}
+
+// 更新用户头像
+// 只有一个参数，不需要解构赋值
+export const updateUserAvatarAPI = (avatar) => {
+    return request({
+        url: '/my/update/avatar',
+        method: 'PATCH',
+        data: {
+            avatar // 头像base64字符串
+        }
+    })
+}
+
+// 更新用户密码
+export const updatePwdAPI = ({ old_pwd, new_pwd, re_pwd }) => {
+    return request({
+        url: '/my/updatepwd',
+        method: 'PATCH',
+        data: {
+            old_pwd,
+            new_pwd,
+            re_pwd
+        }
+    })
+}

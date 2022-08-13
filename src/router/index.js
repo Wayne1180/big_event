@@ -6,8 +6,29 @@ Vue.use(VueRouter)
 
 const routes = [
   {
-    path: '/',
-    redirect: '/login'
+    path: '/', // 默认打开直接看到布局页
+    component: () => import('@/views/layout'),
+    redirect: '/home', // 默认显示首页的二级路由
+    children: [
+      // 侧边栏导航，点击会切换路由地址，路由地址靠数据请求回来铺设上去的
+      // 所以你的路由规则要配合它保持一致
+      {
+        path: 'home',
+        component: () => import('@/views/home')
+      },
+      {
+        path: 'user-info',
+        component: () => import('@/views/user/userInfo')
+      },
+      {
+        path: 'user-avatar',
+        component: () => import('@/views/user/userAvatar')
+      },
+      {
+        path: 'user-pwd',
+        component: () => import('@/views/user/userPwd')
+      }
+    ]
   },
   {
     path: '/reg',
@@ -20,7 +41,8 @@ const routes = [
   {
     path: '/layout',
     component: () => import(/* webpackChunkName:"login" */ '@/views/layout')
-  }
+  },
+
 ]
 
 const router = new VueRouter({

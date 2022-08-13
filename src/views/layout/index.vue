@@ -50,14 +50,13 @@
         </div>
         <!-- 侧边栏导航-菜单 -->
         <el-menu
-          default-active="/home"
+          :default-active="$route.path"
           class="el-menu-vertical-demo"
-          @open="handleOpen"
-          @close="handleClose"
           background-color="#23262E"
           text-color="#fff"
           active-text-color="#409EFF"
           unique-opened
+          router
         >
           <template v-for="item in menus">
             <el-menu-item
@@ -87,7 +86,9 @@
       </el-aside>
       <el-container>
         <!-- 页面主体区域 -->
-        <el-main> Main.vue后台主页 </el-main>
+        <el-main>
+          <router-view></router-view>
+        </el-main>
         <!-- 底部 footer 区域 -->
         <el-footer>© www.wayne.com - 韦恩科技有限公司</el-footer>
       </el-container>
@@ -124,12 +125,6 @@ export default {
         // 2.跳转到登录页面
         this.$router.push("/login");
       });
-    },
-    handleOpen(key, keyPath) {
-      console.log(key, keyPath);
-    },
-    handleClose(key, keyPath) {
-      console.log(key, keyPath);
     },
     // created最好不要用async，所以单独写一个函数请求接口
     async getMenuListFn() {
