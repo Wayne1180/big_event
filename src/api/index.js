@@ -57,19 +57,33 @@ export const getMenusListAPI = () => {
 }
 
 // 更新用户基本资料
-export const updateUserInfoAPI = ({ obj }) => {
+export const updateUserInfoAPI = (obj) => {
     return request({
         url: '/my/userinfo',
         method: 'PUT',
-        data: {
-            id,
-            username,
-            nickname,
-            email,
-            user_pic
-        }
+        data: obj
+
+        // id,
+        // email,
+        // nickname,
+        // user_pic,
+        // username
+
     })
 }
+// export const updateUserInfoAPI = ({ id, email, nickname, user_pic, username }) => {
+//     return request({
+//         url: '/my/userinfo',
+//         method: 'PUT',
+//         data: {
+//             id,
+//             email,
+//             nickname,
+//             user_pic,
+//             username
+//         }
+//     })
+// }
 
 // 更新用户头像
 // 只有一个参数，不需要解构赋值
@@ -93,5 +107,59 @@ export const updatePwdAPI = ({ old_pwd, new_pwd, re_pwd }) => {
             new_pwd,
             re_pwd
         }
+    })
+}
+
+// 获取文章分类
+export const getArtCateListAPI = () => {
+    return request({
+        url: '/my/cate/list'
+    })
+}
+
+// 增加文章分类
+export const addArtCateListAPI = ({ cate_name, cate_alias }) => {
+    return request({
+        url: '/my/cate/add',
+        method: 'POST',
+        data: {
+            cate_name,
+            cate_alias
+        }
+    })
+}
+
+// 更新文章分类
+export const updateArtCateAPI = ({ id, cate_name, cate_alias }) => {
+    return request({
+        url: '/my/cate/info',
+        method: 'PUT',
+        data: {
+            id,
+            cate_name,
+            cate_alias
+        }
+    })
+}
+
+// 删除文章分类
+export const deleteArtCateAPI = (id) => {
+    return request({
+        url: '/my/cate/del',
+        method: 'DELETE',
+        params: {
+            id
+        }
+    })
+}
+
+// 发布文章 参数是FormData表单数据对象
+export const uploadArticleAPI = (fd) => {
+    return request({
+        url: '/my/article/add',
+        method: 'POST',
+        data: fd
+        // {} 如果是一个普通对象，axios会把它转成JSON字符串在请求体里交给后台
+        // 这个接口文档要求请求体里是一个FormData类型（表单数据对象）携带文件给后台
     })
 }

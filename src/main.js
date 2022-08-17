@@ -4,7 +4,7 @@ import router from './router'
 import store from './store'
 import '@/assets/global.less'
 import '@/elementUI/index' // 让elementUI注册的代码参与打包，才能在页面上运行并注册组件
-
+import '@/QuillEditor/index'
 
 Vue.config.productionTip = false
 

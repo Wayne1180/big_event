@@ -69,11 +69,12 @@ export default {
           // 所以缺少id，就给他添加一个
           this.userForm.id = this.$store.state.userInfo.id;
           const res = await updateUserInfoAPI(this.userForm);
-          if (res.code !== 0) return this.$message.error("更新用户信息失败！");
+          if (res.data.code !== 0)
+            return this.$message.error("更新用户信息失败！");
           // 更新用户信息成功，刷新Vuex中的数据
           this.$message.success("更新成功！");
           // 重新让vuex获取下最新的用户数据
-          this.$store.dispatch("initUserInfo");
+          this.$store.dispatch("getUserInfoActions");
         } else {
           // 未通过校验
           return false;

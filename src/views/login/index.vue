@@ -82,7 +82,7 @@ export default {
             this.$message.success(res.message);
             // 提交给mutations把token字符串保存到vuex中
             this.updateToken(res.token);
-            this.$router.replace("/layout");
+            this.$router.replace("/");
           } else {
             return this.$message.error(res.message);
           }
