@@ -29,8 +29,12 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" size="small">筛选</el-button>
-            <el-button type="info" size="small">重置</el-button>
+            <el-button type="primary" size="small" @click="chooseFn"
+              >筛选</el-button
+            >
+            <el-button type="info" size="small" @click="resetFn"
+              >重置</el-button
+            >
           </el-form-item>
         </el-form>
         <!-- 发表文章的按钮 -->
@@ -44,9 +48,43 @@
       </div>
 
       <!-- 文章表格区域 -->
+      <el-table :data="artList" style="width: 100%" border stripe>
+        <el-table-column label="文章标题" prop="title">
+          <template v-slot="scope">
+            <el-link type="primary" @click="showDetailFn(scope.row.id)">{{
+              scope.row.title
+            }}</el-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="分类" prop="cate_name"></el-table-column>
+        <el-table-column label="发表时间" prop="pub_date">
+          <template v-slot="scope">
+            <span> {{ $formatDate(scope.row.pub_date) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" prop="state"></el-table-column>
+        <el-table-column label="操作">
+          <template v-slot="{ row }">
+            <el-button type="danger" size="mini" @click="removeFn(row.id)"
+              >删除</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
 
       <!-- 分页区域 -->
+      <el-pagination
+        @size-change="handleSizeChangeFn"
+        @current-change="handleCurrentChangeFn"
+        :current-page.sync="q.pagenum"
+        :page-sizes="[2, 3, 5, 10]"
+        :page-size.sync="q.pagesize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+      >
+      </el-pagination>
     </el-card>
+
     <!-- 发表文章的 Dialog 对话框 -->
     <el-dialog
       title="发表文章"
@@ -118,11 +156,43 @@
         </el-form-item>
       </el-form>
     </el-dialog>
+
+    <!-- 查看文章详情的对话框 -->
+    <el-dialog title="文章预览" :visible.sync="detailVisible" width="80%">
+      <h1 class="title">{{ artDetail.title }}</h1>
+
+      <div class="info">
+        <span>作者：{{ artDetail.nickname || artDetail.username }}</span>
+        <span>发布时间：{{ $formatDate(artDetail.pub_date) }}</span>
+        <span>所属分类：{{ artDetail.cate_name }}</span>
+        <span>状态：{{ artDetail.state }}</span>
+      </div>
+
+      <!-- 分割线 -->
+      <el-divider></el-divider>
+
+      <!-- 文章的封面 -->
+      <img
+        v-if="artDetail.cover_img"
+        :src="baseURL + artDetail.cover_img"
+        alt=""
+      />
+
+      <!-- 文章的详情 -->
+      <div v-html="artDetail.content" class="detail-box"></div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getArtCateListAPI, uploadArticleAPI } from "@/api";
+import { baseURL } from "@/utils/request";
+import {
+  getArtCateListAPI,
+  uploadArticleAPI,
+  getArtListAPI,
+  getArtDetailAPI,
+  delArticleAPI,
+} from "@/api";
 import defaultImg from "@/assets/images/cover.jpg";
 export default {
   name: "ArtList",
@@ -130,8 +200,8 @@ export default {
     return {
       // 查询参数对象
       q: {
-        pagenum: 1,
-        pagesize: 2,
+        pagenum: 1, // 默认拿第一页的数据
+        pagesize: 2, // 默认当前页需要几条数据(传递给后台，后台就返回几个数据)
         cate_id: "",
         state: "",
       },
@@ -166,13 +236,26 @@ export default {
         ],
       },
       cateList: [], // 保存文章分类列表
+      artList: [], // 保存文章列表
+      total: 0, // 保存现有文章的总数
+      detailVisible: false, // 用于查看文章详情的对话框(显示/隐藏)
+      artDetail: {}, // 文章详情
+      baseURL,
     };
   },
   created() {
     // 请求分类数据
     this.getCateListFn();
+    // 请求文章列表
+    this.getArticleListFn();
   },
   methods: {
+    // 获取所有文章列表
+    async getArticleListFn() {
+      const { data: res } = await getArtListAPI(this.q);
+      this.artList = res.data; // 保存当前获取的文章列表（注意：有分页不是所有数据）
+      this.total = res.total; // 保存总数
+    },
     // 发表文章按钮的点击事件
     showPubDialogFn() {
       this.pubDialogVisible = true;
@@ -246,6 +329,8 @@ export default {
 
           // 关闭对话框
           this.pubDialogVisible = false;
+          // 刷新列表 再次请求文章列表数据
+          this.getArticleListFn();
         } else {
           return false; // 阻止默认行为(因为按钮有默认提交行为)
         }
@@ -261,6 +346,73 @@ export default {
       this.$refs.pubFormRef.resetFields();
       // 我们需要手动给封面标签img重新设置一个值，因为它没有受到v-model影响
       this.$refs.imgRef.setAttribute("src", defaultImg);
+    },
+    // 根据选择的页码/条数，影响q对象对应属性的值，再重新发一次请求让后台重新返回数据
+    // 分页-每页条数改变触发
+    handleSizeChangeFn(sizes) {
+      // sizes：当前需要每页显示的条数
+      // 因为Pagination的标签上已经加了.sync，子组件内会双向绑定到右侧vue变量上(q对象里pagesize已经改变了)
+      // 如果不放心，可以再写一遍
+      this.q.pagesize = sizes;
+      this.q.pagenum = 1;
+      this.getArticleListFn();
+    },
+    // 当前页码改变时触发
+    handleCurrentChangeFn(nowPage) {
+      // nowPage:当前要看的第几页，页数
+      this.q.pagenum = nowPage;
+      this.getArticleListFn();
+    },
+    // 筛选按钮的点击事件
+    chooseFn() {
+      // 当有了筛选的条件，想让页码回归1，每页的条数回归2
+      this.q.pagenum = 1;
+      this.q.pagesize = 2;
+      this.getArticleListFn();
+    },
+    // 重置按钮的点击事件
+    resetFn() {
+      this.q.pagenum = 1;
+      this.q.pagesize = 2;
+      this.q.cate_id = "";
+      this.q.state = "";
+    },
+    // 文章标题点击事件 为了查看详情
+    async showDetailFn(artId) {
+      this.detailVisible = true;
+      // artId: 文章id值
+      const res = await getArtDetailAPI(artId);
+      this.artDetail = res.data.data;
+    },
+    // 删除文章按钮的点击事件
+    async removeFn(id) {
+      // 1.询问用户是否要删除
+      const confirmResult = await this.$confirm(
+        "此操作将永久删除该文章，是否继续",
+        "提示",
+        {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      ).catch((err) => err);
+      // 2.取消了删除
+      if (confirmResult === "cancel") return;
+      // 执行删除的操作
+      const { data: res } = await delArticleAPI(id);
+      if (res.code !== 0) return this.$message.error("删除失败！");
+      this.$message.success("删除成功！");
+
+      // 数组里面只保存当前页的数据，别的页的需要传参q给后台获取覆盖
+      // 1的原因：虽然你调用删除接口但是那是后端删除，前端数组里你没有代码去修改它
+      if (this.artList.length === 1) {
+        if (this.q.pagenum > 1) {
+          this.q.pagenum--;
+        }
+      }
+
+      // 把分页和筛选条件重置，让表格的数据重新请求一次
+      this.resetFn();
     },
   },
 };
@@ -280,7 +432,12 @@ export default {
 // ::v-deep作用: 穿透选择, 正常style上加了scope的话, 会给.ql-editor[data-v-hash]属性, 只能选择当前页面标签或者组件的根标签
 // 如果想要选择组件内的标签(那些标签没有data-v-hash值)所以正常选择选不中, 加了::v-deep空格前置的话, 选择器就会变成如下形式
 // [data-v-hash] .ql-editor 这样就能选中组件内的标签的class类名了
-::v-deep .ql-editor {
+
+// ::v-deep .ql-editor {
+//   min-height: 300px;
+// }
+
+:deep(.ql-editor) {
   min-height: 300px;
 }
 // 设置图片封面的宽高
@@ -288,5 +445,29 @@ export default {
   width: 400px;
   height: 280px;
   object-fit: cover;
+}
+.el-pagination {
+  margin-top: 15px;
+}
+.title {
+  font-size: 24px;
+  text-align: center;
+  font-weight: normal;
+  color: #000;
+  margin: 0 0 10px 0;
+}
+
+.info {
+  font-size: 12px;
+  span {
+    margin-right: 20px;
+  }
+}
+
+// 修改 dialog 内部元素的样式，需要添加样式穿透
+:deep(.detail-box) {
+  img {
+    width: 500px;
+  }
 }
 </style>

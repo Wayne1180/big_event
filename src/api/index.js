@@ -163,3 +163,43 @@ export const uploadArticleAPI = (fd) => {
         // 这个接口文档要求请求体里是一个FormData类型（表单数据对象）携带文件给后台
     })
 }
+
+
+// 获取文章列表
+export const getArtListAPI = ({ pagenum, pagesize, cate_id, state }) => {
+    return request({
+        // query参数第一种写法
+        // url:`/my/article/list?pagenum=${}`,
+
+        // query参数第二种写法,axios拼
+        url: '/my/article/list',
+        params: {
+            pagenum, // 当前页码
+            pagesize, // 当前页需要的数据条数
+            cate_id, // 文章分类id
+            state // 文章状态
+        }
+
+    })
+}
+
+// 获取文章详情
+export const getArtDetailAPI = (id) => {
+    return request({
+        url: '/my/article/info',
+        params: {
+            id
+        }
+    })
+}
+
+// 删除文章
+export const delArticleAPI = (id) => {
+    return request({
+        url: '/my/article/info',
+        method: 'DELETE',
+        params: {
+            id
+        }
+    })
+}
